@@ -50,6 +50,12 @@ export declare function ThemeProvider<
     children?: any;
   }
 >(props: T): JSX.Element;
+export declare function DirectiveProvider<
+  T extends {
+    directives: Record<string, Function>;
+    children?: any;
+  }
+>(props: T): JSX.Element;
 export declare function useTheme(): DefaultTheme;
 export interface ThemeProp {
   theme?: DefaultTheme;
@@ -71,7 +77,8 @@ type TagFn<T> = <P>(
 type StylingFn<T> = StylesFn<T> & TagFn<T>;
 export interface Styled {
   <T extends keyof JSX.IntrinsicElements>(
-    element: T | Component<JSX.IntrinsicElements[T]>
+    element: T | Component<JSX.IntrinsicElements[T]>,
+    prefixClass?: string
   ): StylingFn<JSX.IntrinsicElements[T]>;
   <T>(component: Component<T>): StylingFn<T>;
 }
