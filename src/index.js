@@ -20,6 +20,7 @@ export function setup(prefixer, shouldForwardProp = null) {
   gooberSetup(null, prefixer);
   getForwardProps = shouldForwardProp;
 }
+
 const ThemeContext = createContext();
 export function ThemeProvider(props) {
   return createComponent(ThemeContext.Provider, {
@@ -33,7 +34,20 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-function makeStyled(tag) {
+const DirectiveContext = createContext();
+export function DirectiveProvider(props) {
+  return createComponent(DirectiveContext.Provider, {
+    value: props.directives,
+    get children() {
+      return props.children;
+    }
+  });
+}
+export function useDirectives() {
+  return useContext(DirectiveContext);
+}
+
+function makeStyled(tag, prefixClass) {
   let _ctx = this || {};
   return (...args) => {
     const Styled = props => {
@@ -48,7 +62,7 @@ function makeStyled(tag) {
             { target: _ctx.target, o: append, p: withTheme, g: _ctx.g },
             args
           );
-          return [pClass, className].filter(Boolean).join(" ");
+          return [prefixClass, pClass, className].filter(Boolean).join(" ");
         }
       });
       const [local, newProps] = splitProps(clone, ["as", "theme"]);
@@ -71,12 +85,26 @@ function makeStyled(tag) {
             ...others
           });
         } else {
+          const directives = Object.keys(htmlProps)
+            .filter(key => key.startsWith('use:'));
+
           if (_ctx.g == 1) {
             // When using Global Styles we don't want to hydrate the unused nodes
             el = document.createElement(createTag);
             spread(el, htmlProps);
           } else {
             el = Dynamic(mergeProps({ component: createTag }, htmlProps));
+          }
+          
+          if (directives.length) {
+            const directivesContext = useDirectives();
+
+            if (directivesContext) {
+              const element = typeof el === 'function' ? el() : el;
+              for (const directive of directives) {
+                directivesContext[directive](element, () => htmlProps[directive]);
+              }
+            }
           }
         }
       }
